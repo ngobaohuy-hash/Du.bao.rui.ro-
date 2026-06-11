@@ -227,7 +227,7 @@ with tab1:
     st.dataframe(df_raw[expected_features + [target_col]].describe().T, use_container_width=True)
 
 # ------------------------------------------------------------------------------
-# TAB 2: TRỰC QUAN HÓA BIẾN CHỈ BÁO (ĐÃ KHẮC PHỤC LỖI THAM SỐ PLOTLY)
+# TAB 2: TRỰC QUAN HÓA BIẾN CHỈ BÁO (ĐÃ NÂNG ĐẬM MÀU SẮC NHẬN DIỆN)
 # ------------------------------------------------------------------------------
 with tab2:
     st.subheader("Phân tích phân phối biểu đồ tĩnh và động")
@@ -246,7 +246,7 @@ with tab2:
     st.plotly_chart(fig_target, use_container_width=True)
     
     st.write("#### 2. Biểu đồ đường mật độ phân phối mịn (KDE Phân Tích Rủi Ro)")
-    st.caption("Gợi ý: Sử dụng biểu đồ đường cong mật độ (KDE) giúp phòng quản trị rủi ro nhận biết ngay phân khúc giao dịch bất thường khi dải màu đỏ (Rủi ro) lệch xa dải màu xanh (An toàn).")
+    st.caption("Gợi ý: Hệ màu tương phản cao giúp phòng quản trị rủi ro thẩm định rõ ràng phân khúc phân tách đặc trưng giữa hai nhóm.")
     
     selected_features = st.multiselect(
         "Chọn các biến đặc trưng muốn trực quan hóa phân phối dữ liệu:",
@@ -263,18 +263,21 @@ with tab2:
         for idx, feat in enumerate(selected_features):
             col_target = cols[idx % 2]
             with col_target:
-                # FIX: Loại bỏ 'element="step"' bị xung đột, sử dụng mô hình overlay phân phối chuẩn
                 fig_feat = px.histogram(
                     df_plot, x=feat, color='Trạng thái',
                     marginal="box", 
                     histnorm="probability density", 
                     barmode="overlay",
                     title=f"Mật độ phân bổ đặc trưng {feat} theo phân lớp rủi ro",
-                    color_discrete_map={'An toàn (0)': '#1E88E5', 'Rủi ro (1)': '#E53935'} 
+                    color_discrete_map={'An toàn (0)': '#0D47A1', 'Rủi ro (1)': '#D50000'} # Màu tương phản đậm (Royal Blue & Neon Red)
                 )
                 
-                # Cấu hình đường viền mượt mờ và độ rộng thanh để giả lập đường KDE liên tục cao cấp
-                fig_feat.update_traces(opacity=0.45, marker_line_width=1.5, marker_line_color="white") 
+                # NÂNG CẤP: Đẩy độ đậm màu opacity lên 0.75 và tăng độ dày đường viền marker để dễ nhìn
+                fig_feat.update_traces(
+                    opacity=0.75, 
+                    marker_line_width=2.0, 
+                    marker_line_color="white"
+                ) 
                 fig_feat.update_layout(
                     height=380, 
                     margin=dict(l=20, r=20, t=50, b=20),
