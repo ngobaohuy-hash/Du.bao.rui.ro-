@@ -227,7 +227,7 @@ with tab1:
     st.dataframe(df_raw[expected_features + [target_col]].describe().T, use_container_width=True)
 
 # ------------------------------------------------------------------------------
-# TAB 2: TRỰC QUAN HÓA BIẾN CHỈ BÁO
+# TAB 2: TRỰC QUAN HÓA BIẾN CHỈ BÁO (ĐÃ THAY ĐỔI KIỂU BIỂU ĐỒ SANG DẠNG ĐƯỜNG MẬT ĐỘ KDE)
 # ------------------------------------------------------------------------------
 with tab2:
     st.subheader("Phân tích phân phối biểu đồ tĩnh và động")
@@ -245,7 +245,10 @@ with tab2:
     fig_target.update_layout(height=350, showlegend=False)
     st.plotly_chart(fig_target, use_container_width=True)
     
-    st.write("#### 2. Biểu đồ phân phối các biến chỉ báo đầu vào (Mặc định 4 biến đầu tiên)")
+    # --- PHẦN ĐÃ ĐƯỢC CHỈNH SỬA TRỰC QUAN HƠN ---
+    st.write("#### 2. Biểu đồ đường mật độ phân phối mịn (KDE Phân Tích Rủi Ro)")
+    st.caption("Gợi ý: Sử dụng biểu đồ đường cong mật độ (KDE) giúp phòng quản trị rủi ro nhận biết ngay phân khúc giao dịch bất thường khi dải màu cam (Rủi ro) lệch xa dải màu xanh (An toàn).")
+    
     selected_features = st.multiselect(
         "Chọn các biến đặc trưng muốn trực quan hóa phân phối dữ liệu:",
         options=expected_features,
@@ -255,23 +258,40 @@ with tab2:
     
     if selected_features:
         cols = st.columns(2)
+        # Ép kiểu dữ liệu mục tiêu sang chuỗi nhãn hiển thị dễ hiểu
+        df_plot = df_raw.copy()
+        df_plot['Trạng thái'] = df_plot[target_col].astype(str).map({'0': 'An toàn (0)', '1': 'Rủi ro (1)'})
+        
         for idx, feat in enumerate(selected_features):
             col_target = cols[idx % 2]
             with col_target:
+                # Thay thế Histogram cột chồng rời rạc bằng biểu đồ đường cong mật độ mịn (KDE qua Histogram lines)
                 fig_feat = px.histogram(
-                    df_raw, x=feat, color=df_raw[target_col].astype(str),
-                    marginal="box", barmode="overlay",
-                    labels={'color': 'Nhãn default'},
-                    title=f"Phân phối tần suất đặc trưng {feat} theo nhãn trạng thái",
-                    color_discrete_sequence=["#1f77b4", "#ff7f0e"]
+                    df_plot, x=feat, color='Trạng thái',
+                    marginal="box",       # Giữ lại biểu đồ hộp nhỏ phía trên để soi điểm ngoại lai (Outliers)
+                    histfunc="count",
+                    histnorm="probability density", # Chuẩn hóa thành mật độ xác suất để vẽ đường cong mịn
+                    barmode="overlay",
+                    element="step",       # Chuyển từ cột đặc sang dạng đường viền bậc thang
+                    text_auto=False,
+                    title=f"Mật độ phân bổ đặc trưng {feat} theo phân lớp rủi ro",
+                    color_discrete_map={'An toàn (0)': '#1E88E5', 'Rủi ro (1)': '#E53935'} # Màu nhận diện trực quan (Xanh dương an toàn - Đỏ rủi ro)
                 )
-                fig_feat.update_layout(height=350, margin=dict(l=20, r=20, t=40, b=20))
+                
+                # Cấu hình làm mịn đường nét và căn chỉnh khoảng cách
+                fig_feat.update_traces(opacity=0.45, fill=True) # Tạo dải màu mờ phủ dưới đường cong để dễ so sánh vùng giao thoa
+                fig_feat.update_layout(
+                    height=380, 
+                    margin=dict(l=20, r=20, t=50, b=20),
+                    xaxis_title=f"Giá trị biến đặc trưng {feat}",
+                    yaxis_title="Mật độ phân bổ (Density)"
+                )
                 st.plotly_chart(fig_feat, use_container_width=True)
     else:
         st.info("Vui lòng chọn ít nhất một biến chỉ báo đặc trưng để vẽ biểu đồ.")
 
 # ------------------------------------------------------------------------------
-# TAB 3: KẾT QUẢ HUẤN LUYỆN & KIỂM ĐỊNH (HỘP MÀU HIỆU NĂNG)
+# TAB 3: KẾT QUẢ HUẤN LUYỆN & KIỂM ĐỊNH
 # ------------------------------------------------------------------------------
 with tab3:
     st.subheader("Chỉ số hiệu năng mô hình phân loại nhị phân")
@@ -356,7 +376,7 @@ with tab3:
             st.plotly_chart(fig_imp, use_container_width=True)
 
 # ------------------------------------------------------------------------------
-# TAB 4: ỨNG DỤNG DỰ BÁO RỦI RO (ĐỀ XUẤT ĐỔI SANG Ô HÌNH NÚT BẤM - SEGMENTED CONTROL)
+# TAB 4: ỨNG DỤNG DỰ BÁO RỦI RO
 # ------------------------------------------------------------------------------
 with tab4:
     st.subheader("Phân tách luồng kiểm tra dữ liệu giao dịch")
@@ -367,21 +387,15 @@ with tab4:
     else:
         model = st.session_state['trained_model']
         
-        # ----------------------------------------------------------------------
-        # THAY THẾ st.radio THÀNH CÁC Ô NÚT BẤM (st.segmented_control / st.pills)
-        # ----------------------------------------------------------------------
         st.write("**Chọn phương thức nhập dữ liệu kiểm thử:**")
         mode = st.segmented_control(
             "Phương thức nhập dữ liệu kiểm thử:",
             options=["📥 Nhập trực tiếp đơn lẻ", "📁 Kiểm tra hàng loạt (Batch)"],
             default="📥 Nhập trực tiếp đơn lẻ",
-            label_visibility="collapsed" # Ẩn nhãn thừa để tập trung vào ô nút bấm
+            label_visibility="collapsed"
         )
-        st.write("<br>", unsafe_allow_html=True) # Tạo khoảng cách dòng thông thoáng
+        st.write("<br>", unsafe_allow_html=True)
         
-        # ----------------------------------------------------------------------
-        # CHẾ ĐỘ 1: NHẬP TRỰC TIẾP
-        # ----------------------------------------------------------------------
         if "Nhập trực tiếp đơn lẻ" in mode:
             st.write("#### Nhập thông số giao dịch cần chấm điểm rủi ro")
             
@@ -420,9 +434,6 @@ with tab4:
                     with col_p2:
                         st.metric("Xác suất phân loại rủi ro", f"{prob:.2%}")
                         
-        # ----------------------------------------------------------------------
-        # CHẾ ĐỘ 2: TẢI FILE KIỂM TRA HÀNG LOẠT
-        # ----------------------------------------------------------------------
         else:
             st.write("#### Tải lên tệp danh sách hồ sơ cần quét rủi ro")
             st.caption("Yêu cầu file tải lên định dạng CSV/Excel chứa đầy đủ các cột đặc trưng từ X_1 đến X_14.")
