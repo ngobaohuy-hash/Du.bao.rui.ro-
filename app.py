@@ -12,8 +12,8 @@ import io
 # ==============================================================================
 st.set_page_config(
     layout="wide",
-    page_title="Hệ thống Phát hiện Giao dịch Rủi ro & Gian lận",
-    page_icon="🛡️"
+    page_title="Hệ thống Phát hiện Giao dịch Gian lận",
+    page_icon="💕"
 )
 
 # ==============================================================================
