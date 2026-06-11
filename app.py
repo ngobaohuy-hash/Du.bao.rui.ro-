@@ -185,13 +185,12 @@ tab1, tab2, tab3, tab4 = st.tabs([
 ])
 
 # ------------------------------------------------------------------------------
-# TAB 1: TỔNG QUAN DỮ LIỆU (ĐÃ CẬP NHẬT THÀNH HỘP MÀU QUAN SÁT)
+# TAB 1: TỔNG QUAN DỮ LIỆU (HỘP MÀU QUAN SÁT)
 # ------------------------------------------------------------------------------
 with tab1:
     st.subheader("Phân tích cấu trúc file dữ liệu")
     file_size_mb = len(file_bytes) / (1024 * 1024)
     
-    # Thiết kế 3 hộp màu lớn hiển thị thông tin tệp đầu vào
     col_m1, col_m2, col_m3 = st.columns(3)
     with col_m1:
         st.markdown(f"""
@@ -220,7 +219,7 @@ with tab1:
             </div>
         """, unsafe_allow_html=True)
         
-    st.write("<br>", unsafe_allow_html=True) # Tạo khoảng cách dòng đẹp mắt sau bảng card
+    st.write("<br>", unsafe_allow_html=True)
     st.write("### Trích xuất 5 bản ghi dữ liệu đầu tiên (Raw Data)")
     st.dataframe(df_raw.head(5), use_container_width=True)
     
@@ -272,7 +271,7 @@ with tab2:
         st.info("Vui lòng chọn ít nhất một biến chỉ báo đặc trưng để vẽ biểu đồ.")
 
 # ------------------------------------------------------------------------------
-# TAB 3: KẾT QUẢ HUẤN LUYỆN & KIỂM ĐỊNH
+# TAB 3: KẾT QUẢ HUẤN LUYỆN & KIỂM ĐỊNH (HỘP MÀU HIỆU NĂNG)
 # ------------------------------------------------------------------------------
 with tab3:
     st.subheader("Chỉ số hiệu năng mô hình phân loại nhị phân")
@@ -357,7 +356,7 @@ with tab3:
             st.plotly_chart(fig_imp, use_container_width=True)
 
 # ------------------------------------------------------------------------------
-# TAB 4: ỨNG DỤNG DỰ BÁO RỦI RO
+# TAB 4: ỨNG DỤNG DỰ BÁO RỦI RO (ĐỀ XUẤT ĐỔI SANG Ô HÌNH NÚT BẤM - SEGMENTED CONTROL)
 # ------------------------------------------------------------------------------
 with tab4:
     st.subheader("Phân tách luồng kiểm tra dữ liệu giao dịch")
@@ -368,13 +367,22 @@ with tab4:
     else:
         model = st.session_state['trained_model']
         
-        mode = st.radio(
+        # ----------------------------------------------------------------------
+        # THAY THẾ st.radio THÀNH CÁC Ô NÚT BẤM (st.segmented_control / st.pills)
+        # ----------------------------------------------------------------------
+        st.write("**Chọn phương thức nhập dữ liệu kiểm thử:**")
+        mode = st.segmented_control(
             "Phương thức nhập dữ liệu kiểm thử:",
-            options=["Chế độ 1: Nhập trực tiếp từ đơn lẻ", "Chế độ 2: Tải file dữ liệu kiểm tra hàng loạt (Batch Prediction)"],
-            horizontal=True
+            options=["📥 Nhập trực tiếp đơn lẻ", "📁 Kiểm tra hàng loạt (Batch)"],
+            default="📥 Nhập trực tiếp đơn lẻ",
+            label_visibility="collapsed" # Ẩn nhãn thừa để tập trung vào ô nút bấm
         )
+        st.write("<br>", unsafe_allow_html=True) # Tạo khoảng cách dòng thông thoáng
         
-        if "Chế độ 1" in mode:
+        # ----------------------------------------------------------------------
+        # CHẾ ĐỘ 1: NHẬP TRỰC TIẾP
+        # ----------------------------------------------------------------------
+        if "Nhập trực tiếp đơn lẻ" in mode:
             st.write("#### Nhập thông số giao dịch cần chấm điểm rủi ro")
             
             with st.form("single_prediction_form"):
@@ -412,6 +420,9 @@ with tab4:
                     with col_p2:
                         st.metric("Xác suất phân loại rủi ro", f"{prob:.2%}")
                         
+        # ----------------------------------------------------------------------
+        # CHẾ ĐỘ 2: TẢI FILE KIỂM TRA HÀNG LOẠT
+        # ----------------------------------------------------------------------
         else:
             st.write("#### Tải lên tệp danh sách hồ sơ cần quét rủi ro")
             st.caption("Yêu cầu file tải lên định dạng CSV/Excel chứa đầy đủ các cột đặc trưng từ X_1 đến X_14.")
