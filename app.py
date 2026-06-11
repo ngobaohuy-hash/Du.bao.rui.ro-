@@ -92,7 +92,7 @@ with st.sidebar:
 # ==============================================================================
 # 4) HEADER (THÀNH PHẦN 2) — VÙNG ĐỊNH HƯỚNG TRẠNG THÁI
 # ==============================================================================
-st.title("🛡️ Hệ thống Phân tích & Phát hiện Giao dịch Gian lận")
+st.title("🛡️Phân tích & Phát hiện Giao dịch Gian lận 💕")
 st.caption(
     "Ứng dụng hỗ trợ phòng quản trị rủi ro thẩm định và phân loại các giao dịch bất thường dựa trên mô hình học máy "
     "Random Forest. Đầu vào yêu cầu tập thông tin biến cấu trúc từ X_1 đến X_14 cùng biến mục tiêu 'default'."
