@@ -227,7 +227,7 @@ with tab1:
     st.dataframe(df_raw[expected_features + [target_col]].describe().T, use_container_width=True)
 
 # ------------------------------------------------------------------------------
-# TAB 2: TRỰC QUAN HÓA BIẾN CHỈ BÁO (ĐÃ THAY ĐỔI KIỂU BIỂU ĐỒ SANG DẠNG ĐƯỜNG MẬT ĐỘ KDE)
+# TAB 2: TRỰC QUAN HÓA BIẾN CHỈ BÁO (ĐÃ KHẮC PHỤC LỖI THAM SỐ PLOTLY)
 # ------------------------------------------------------------------------------
 with tab2:
     st.subheader("Phân tích phân phối biểu đồ tĩnh và động")
@@ -245,9 +245,8 @@ with tab2:
     fig_target.update_layout(height=350, showlegend=False)
     st.plotly_chart(fig_target, use_container_width=True)
     
-    # --- PHẦN ĐÃ ĐƯỢC CHỈNH SỬA TRỰC QUAN HƠN ---
     st.write("#### 2. Biểu đồ đường mật độ phân phối mịn (KDE Phân Tích Rủi Ro)")
-    st.caption("Gợi ý: Sử dụng biểu đồ đường cong mật độ (KDE) giúp phòng quản trị rủi ro nhận biết ngay phân khúc giao dịch bất thường khi dải màu cam (Rủi ro) lệch xa dải màu xanh (An toàn).")
+    st.caption("Gợi ý: Sử dụng biểu đồ đường cong mật độ (KDE) giúp phòng quản trị rủi ro nhận biết ngay phân khúc giao dịch bất thường khi dải màu đỏ (Rủi ro) lệch xa dải màu xanh (An toàn).")
     
     selected_features = st.multiselect(
         "Chọn các biến đặc trưng muốn trực quan hóa phân phối dữ liệu:",
@@ -258,28 +257,24 @@ with tab2:
     
     if selected_features:
         cols = st.columns(2)
-        # Ép kiểu dữ liệu mục tiêu sang chuỗi nhãn hiển thị dễ hiểu
         df_plot = df_raw.copy()
         df_plot['Trạng thái'] = df_plot[target_col].astype(str).map({'0': 'An toàn (0)', '1': 'Rủi ro (1)'})
         
         for idx, feat in enumerate(selected_features):
             col_target = cols[idx % 2]
             with col_target:
-                # Thay thế Histogram cột chồng rời rạc bằng biểu đồ đường cong mật độ mịn (KDE qua Histogram lines)
+                # FIX: Loại bỏ 'element="step"' bị xung đột, sử dụng mô hình overlay phân phối chuẩn
                 fig_feat = px.histogram(
                     df_plot, x=feat, color='Trạng thái',
-                    marginal="box",       # Giữ lại biểu đồ hộp nhỏ phía trên để soi điểm ngoại lai (Outliers)
-                    histfunc="count",
-                    histnorm="probability density", # Chuẩn hóa thành mật độ xác suất để vẽ đường cong mịn
+                    marginal="box", 
+                    histnorm="probability density", 
                     barmode="overlay",
-                    element="step",       # Chuyển từ cột đặc sang dạng đường viền bậc thang
-                    text_auto=False,
                     title=f"Mật độ phân bổ đặc trưng {feat} theo phân lớp rủi ro",
-                    color_discrete_map={'An toàn (0)': '#1E88E5', 'Rủi ro (1)': '#E53935'} # Màu nhận diện trực quan (Xanh dương an toàn - Đỏ rủi ro)
+                    color_discrete_map={'An toàn (0)': '#1E88E5', 'Rủi ro (1)': '#E53935'} 
                 )
                 
-                # Cấu hình làm mịn đường nét và căn chỉnh khoảng cách
-                fig_feat.update_traces(opacity=0.45, fill=True) # Tạo dải màu mờ phủ dưới đường cong để dễ so sánh vùng giao thoa
+                # Cấu hình đường viền mượt mờ và độ rộng thanh để giả lập đường KDE liên tục cao cấp
+                fig_feat.update_traces(opacity=0.45, marker_line_width=1.5, marker_line_color="white") 
                 fig_feat.update_layout(
                     height=380, 
                     margin=dict(l=20, r=20, t=50, b=20),
