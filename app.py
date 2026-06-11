@@ -185,20 +185,42 @@ tab1, tab2, tab3, tab4 = st.tabs([
 ])
 
 # ------------------------------------------------------------------------------
-# TAB 1: TỔNG QUAN DỮ LIỆU
+# TAB 1: TỔNG QUAN DỮ LIỆU (ĐÃ CẬP NHẬT THÀNH HỘP MÀU QUAN SÁT)
 # ------------------------------------------------------------------------------
 with tab1:
     st.subheader("Phân tích cấu trúc file dữ liệu")
     file_size_mb = len(file_bytes) / (1024 * 1024)
     
+    # Thiết kế 3 hộp màu lớn hiển thị thông tin tệp đầu vào
     col_m1, col_m2, col_m3 = st.columns(3)
     with col_m1:
-        st.metric("Số lượng quan sát (Dòng)", f"{df_raw.shape[0]:,}")
-    with col_m2:
-        st.metric("Số lượng biến số (Cột)", f"{df_raw.shape[1]:,}")
-    with col_m3:
-        st.metric("Dung lượng tệp tin", f"{file_size_mb:.2f} MB")
+        st.markdown(f"""
+            <div style="background-color: #ECEFF1; padding: 20px; border-radius: 10px; border-left: 5px solid #455A64; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);">
+                <p style="color: #263238; margin: 0; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Số lượng quan sát</p>
+                <p style="color: #37474F; margin: 5px 0 0 0; font-size: 26px; font-weight: bold;">{df_raw.shape[0]:,}</p>
+                <p style="color: #607D8B; margin: 5px 0 0 0; font-size: 12px;">Tổng số hàng (Dòng) dữ liệu</p>
+            </div>
+        """, unsafe_allow_html=True)
         
+    with col_m2:
+        st.markdown(f"""
+            <div style="background-color: #E8EAF6; padding: 20px; border-radius: 10px; border-left: 5px solid #3F51B5; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);">
+                <p style="color: #1A237E; margin: 0; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Số lượng biến số</p>
+                <p style="color: #283593; margin: 5px 0 0 0; font-size: 26px; font-weight: bold;">{df_raw.shape[1]:,}</p>
+                <p style="color: #3F51B5; margin: 5px 0 0 0; font-size: 12px;">Tổng số cột đặc trưng cấu trúc</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    with col_m3:
+        st.markdown(f"""
+            <div style="background-color: #E0F2F1; padding: 20px; border-radius: 10px; border-left: 5px solid #009688; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);">
+                <p style="color: #004D40; margin: 0; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Dung lượng tệp tin</p>
+                <p style="color: #00695C; margin: 5px 0 0 0; font-size: 26px; font-weight: bold;">{file_size_mb:.2f} MB</p>
+                <p style="color: #009688; margin: 5px 0 0 0; font-size: 12px;">Trọng lượng file đã tải lên</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    st.write("<br>", unsafe_allow_html=True) # Tạo khoảng cách dòng đẹp mắt sau bảng card
     st.write("### Trích xuất 5 bản ghi dữ liệu đầu tiên (Raw Data)")
     st.dataframe(df_raw.head(5), use_container_width=True)
     
@@ -250,7 +272,7 @@ with tab2:
         st.info("Vui lòng chọn ít nhất một biến chỉ báo đặc trưng để vẽ biểu đồ.")
 
 # ------------------------------------------------------------------------------
-# TAB 3: KẾT QUẢ HUẤN LUYỆN & KIỂM ĐỊNH (PHẦN CHỈNH SỬA HỘP MÀU THEO HÌNH ẢNH)
+# TAB 3: KẾT QUẢ HUẤN LUYỆN & KIỂM ĐỊNH
 # ------------------------------------------------------------------------------
 with tab3:
     st.subheader("Chỉ số hiệu năng mô hình phân loại nhị phân")
@@ -261,10 +283,6 @@ with tab3:
     else:
         metrics = st.session_state['evaluation_metrics']
         
-        # ----------------------------------------------------------------------
-        # THAY ĐỔI THÀNH CÁC HỘP MÀU THEO YÊU CẦU TRÊN GIAO DIỆN HÌNH ẢNH
-        # Dử dụng mã màu HTML độc lập để giả lập card KPI bo góc sắc nét.
-        # ----------------------------------------------------------------------
         c1, c2, c3, c4 = st.columns(4)
         
         with c1:
