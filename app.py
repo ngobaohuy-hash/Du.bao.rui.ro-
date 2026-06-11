@@ -189,8 +189,6 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # ------------------------------------------------------------------------------
 with tab1:
     st.subheader("Phân tích cấu trúc file dữ liệu")
-    
-    # Tính kích thước dung lượng ước tính
     file_size_mb = len(file_bytes) / (1024 * 1024)
     
     col_m1, col_m2, col_m3 = st.columns(3)
@@ -205,7 +203,6 @@ with tab1:
     st.dataframe(df_raw.head(5), use_container_width=True)
     
     st.write("### Thống kê mô tả đặc trưng hình học mô hình (X & y)")
-    # Chỉ hiển thị mô tả cho các biến tham gia trực tiếp vào mô hình
     st.dataframe(df_raw[expected_features + [target_col]].describe().T, use_container_width=True)
 
 # ------------------------------------------------------------------------------
@@ -214,7 +211,6 @@ with tab1:
 with tab2:
     st.subheader("Phân tích phân phối biểu đồ tĩnh và động")
     
-    # Biến mục tiêu phân loại: Đặt lên ưu tiên đầu tiên
     st.write("#### 1. Tỷ lệ phân bổ biến mục tiêu rủi ro (`default`)")
     target_counts = df_raw[target_col].value_counts().reset_index()
     target_counts.columns = [target_col, 'Số lượng']
@@ -229,7 +225,6 @@ with tab2:
     st.plotly_chart(fig_target, use_container_width=True)
     
     st.write("#### 2. Biểu đồ phân phối các biến chỉ báo đầu vào (Mặc định 4 biến đầu tiên)")
-    # Thêm multiselect nếu danh sách biến quá rộng
     selected_features = st.multiselect(
         "Chọn các biến đặc trưng muốn trực quan hóa phân phối dữ liệu:",
         options=expected_features,
@@ -238,12 +233,10 @@ with tab2:
     )
     
     if selected_features:
-        # Bố trí lưới biểu đồ cân đối dạng 2 cột
         cols = st.columns(2)
         for idx, feat in enumerate(selected_features):
             col_target = cols[idx % 2]
             with col_target:
-                # Kiểm tra phân phối dữ liệu bằng Box plot và Histogram kết hợp
                 fig_feat = px.histogram(
                     df_raw, x=feat, color=df_raw[target_col].astype(str),
                     marginal="box", barmode="overlay",
@@ -257,25 +250,59 @@ with tab2:
         st.info("Vui lòng chọn ít nhất một biến chỉ báo đặc trưng để vẽ biểu đồ.")
 
 # ------------------------------------------------------------------------------
-# TAB 3: KẾT QUẢ HUẤN LUYỆN & KIỂM ĐỊNH
+# TAB 3: KẾT QUẢ HUẤN LUYỆN & KIỂM ĐỊNH (PHẦN CHỈNH SỬA HỘP MÀU THEO HÌNH ẢNH)
 # ------------------------------------------------------------------------------
 with tab3:
     st.subheader("Chỉ số hiệu năng mô hình phân loại nhị phân")
     
-    # Kiểm tra điều phối trạng thái huấn luyện
     if 'trained_model' not in st.session_state:
         st.info("⚠️ Mô hình hiện tại chưa được kích hoạt huấn luyện trên cấu hình này. "
                 "Vui lòng nhấn nút '🚀 Huấn luyện mô hình' ở Sidebar bên trái để xem kết quả kiểm định.")
     else:
         metrics = st.session_state['evaluation_metrics']
         
-        # Hiển thị các thông số chỉ tiêu vô hướng chính dạng KPI Metric Card
+        # ----------------------------------------------------------------------
+        # THAY ĐỔI THÀNH CÁC HỘP MÀU THEO YÊU CẦU TRÊN GIAO DIỆN HÌNH ẢNH
+        # Dử dụng mã màu HTML độc lập để giả lập card KPI bo góc sắc nét.
+        # ----------------------------------------------------------------------
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Độ chính xác tổng thể (Accuracy)", f"{metrics['accuracy']:.2%}")
-        c2.metric("Độ chính xác mô hình (Precision)", f"{metrics['precision']:.2%}", help="Khả năng dự báo chính xác trong số các giao dịch được gán nhãn gian lận.")
-        c3.metric("Tỷ lệ bắt sót (Recall)", f"{metrics['recall']:.2%}", help="Khả năng phát hiện đúng và bao phủ tổng lượng giao dịch gian lận thực tế.")
-        c4.metric("F1-Score (Cân bằng)", f"{metrics['f1']:.2%}")
         
+        with c1:
+            st.markdown(f"""
+                <div style="background-color: #E3F2FD; padding: 20px; border-radius: 10px; border-left: 5px solid #1E88E5; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);">
+                    <p style="color: #0D47A1; margin: 0; font-size: 14px; font-weight: bold; text-transform: uppercase;">Accuracy</p>
+                    <p style="color: #1565C0; margin: 5px 0 0 0; font-size: 28px; font-weight: bold;">{metrics['accuracy']:.2%}</p>
+                    <p style="color: #555; margin: 5px 0 0 0; font-size: 12px;">Độ chính xác tổng thể</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+        with c2:
+            st.markdown(f"""
+                <div style="background-color: #E8F5E9; padding: 20px; border-radius: 10px; border-left: 5px solid #43A047; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);">
+                    <p style="color: #1B5E20; margin: 0; font-size: 14px; font-weight: bold; text-transform: uppercase;">Precision</p>
+                    <p style="color: #2E7D32; margin: 5px 0 0 0; font-size: 28px; font-weight: bold;">{metrics['precision']:.2%}</p>
+                    <p style="color: #555; margin: 5px 0 0 0; font-size: 12px;">Độ chính xác mô hình</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+        with c3:
+            st.markdown(f"""
+                <div style="background-color: #FFF3E0; padding: 20px; border-radius: 10px; border-left: 5px solid #FB8C00; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);">
+                    <p style="color: #E65100; margin: 0; font-size: 14px; font-weight: bold; text-transform: uppercase;">Recall</p>
+                    <p style="color: #EF6C00; margin: 5px 0 0 0; font-size: 28px; font-weight: bold;">{metrics['recall']:.2%}</p>
+                    <p style="color: #555; margin: 5px 0 0 0; font-size: 12px;">Tỷ lệ bắt sót rủi ro</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+        with c4:
+            st.markdown(f"""
+                <div style="background-color: #F3E5F5; padding: 20px; border-radius: 10px; border-left: 5px solid #8E24AA; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);">
+                    <p style="color: #4A148C; margin: 0; font-size: 14px; font-weight: bold; text-transform: uppercase;">F1-Score</p>
+                    <p style="color: #6A1B9A; margin: 5px 0 0 0; font-size: 28px; font-weight: bold;">{metrics['f1']:.2%}</p>
+                    <p style="color: #555; margin: 5px 0 0 0; font-size: 12px;">Chỉ số cân bằng</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
         st.divider()
         
         col_res1, col_res2 = st.columns(2)
@@ -284,7 +311,6 @@ with tab3:
             st.write("#### Ma trận nhầm lẫn (Confusion Matrix)")
             cm = confusion_matrix(metrics['y_test'], metrics['y_pred'])
             
-            # Trực quan hóa ma trận nhầm lẫn bằng sơ đồ nhiệt Plotly
             fig_cm = px.imshow(
                 cm, text_auto=True,
                 labels=dict(x="Nhãn Dự Đoán (Predicted)", y="Nhãn Thực Tế (Actual)"),
@@ -313,7 +339,7 @@ with tab3:
             st.plotly_chart(fig_imp, use_container_width=True)
 
 # ------------------------------------------------------------------------------
-# TAB 4: ỨNG DỤNG DỰ BÁO RỦI RO (SỬ DỤNG MÔ HÌNH)
+# TAB 4: ỨNG DỤNG DỰ BÁO RỦI RO
 # ------------------------------------------------------------------------------
 with tab4:
     st.subheader("Phân tách luồng kiểm tra dữ liệu giao dịch")
@@ -330,17 +356,11 @@ with tab4:
             horizontal=True
         )
         
-        # ----------------------------------------------------------------------
-        # CHẾ ĐỘ 1: NHẬP TRỰC TIẾP
-        # ----------------------------------------------------------------------
         if "Chế độ 1" in mode:
             st.write("#### Nhập thông số giao dịch cần chấm điểm rủi ro")
             
-            # Lấy giá trị min, max, median từ dữ liệu thô ban đầu để làm giá trị mặc định chuẩn xác
             with st.form("single_prediction_form"):
                 st.write("Cấu hình phân bổ biến số đặc trưng:")
-                
-                # Tạo lưới widget nhập liệu tự động dựa trên danh sách cột
                 form_cols = st.columns(3)
                 input_data = {}
                 
@@ -360,10 +380,7 @@ with tab4:
                 submit_pred = st.form_submit_button("🔍 Thẩm định giao dịch", type="primary")
                 
                 if submit_pred:
-                    # Chuyển đổi dữ liệu sang định dạng DataFrame tương thích
                     single_df = pd.DataFrame([input_data])
-                    
-                    # Tiến hành dự báo nhãn và tính xác suất
                     prediction = model.predict(single_df)[0]
                     prob = model.predict_proba(single_df)[0][1]
                     
@@ -377,9 +394,6 @@ with tab4:
                     with col_p2:
                         st.metric("Xác suất phân loại rủi ro", f"{prob:.2%}")
                         
-        # ----------------------------------------------------------------------
-        # CHẾ ĐỘ 2: TẢI FILE KIỂM TRA HÀNG LOẠT
-        # ----------------------------------------------------------------------
         else:
             st.write("#### Tải lên tệp danh sách hồ sơ cần quét rủi ro")
             st.caption("Yêu cầu file tải lên định dạng CSV/Excel chứa đầy đủ các cột đặc trưng từ X_1 đến X_14.")
@@ -390,25 +404,20 @@ with tab4:
                 df_batch = load_data(batch_file.getvalue(), batch_file.name)
                 
                 if df_batch is not None:
-                    # Kiểm tra tính đồng bộ của tập tính năng đầu vào
                     batch_missing = [col for col in expected_features if col not in df_batch.columns]
                     
                     if batch_missing:
                         st.error(f"Cấu trúc file không khớp. File của bạn thiếu các trường thông tin sau: {batch_missing}")
                     else:
-                        # Thực hiện dự báo hàng loạt
                         X_batch = df_batch[expected_features]
                         batch_preds = model.predict(X_batch)
                         batch_probas = model.predict_proba(X_batch)[:, 1]
                         
-                        # Gán kết quả trực tiếp vào DataFrame mới
                         df_results = df_batch.copy()
                         df_results['Dự báo nhãn (Prediction)'] = batch_preds
                         df_results['Xác suất rủi ro (Risk Probability)'] = batch_probas
                         
                         st.write("### Kết quả chấm điểm hồ sơ hàng loạt")
-                        
-                        # Đếm thống kê tổng hợp nhanh
                         total_cases = len(df_results)
                         fraud_cases = int(np.sum(batch_preds == 1))
                         
@@ -417,7 +426,6 @@ with tab4:
                         
                         st.dataframe(df_results, use_container_width=True)
                         
-                        # Cho phép xuất dữ liệu kết quả phân tích dưới dạng CSV ký tự UTF-8-SIG để đọc excel tiếng việt
                         csv_buffer = io.StringIO()
                         df_results.to_csv(csv_buffer, index=False, encoding='utf-8-sig')
                         csv_bytes = csv_buffer.getvalue().encode('utf-8-sig')
